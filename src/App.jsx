@@ -12,6 +12,7 @@ const easyImageModules = import.meta.glob("./assets/e*.png", {
 export default function App() {
   const [mode, setMode] = useState("easy");
   const [image, setImage] = useState(null);
+  const [imageNumber, setImageNumber] = useState(null);
   const [loading, setLoading] = useState(false);
   const stopShuffleSoundRef = useRef(null);
   const revealTimerRef = useRef(null);
@@ -118,6 +119,7 @@ export default function App() {
   const handleModeChange = (nextMode) => {
     setMode(nextMode);
     setImage(null);
+    setImageNumber(null);
     setLoading(false);
 
     if (revealTimerRef.current) {
@@ -133,6 +135,7 @@ export default function App() {
 
   const startGame = () => {
     setLoading(true);
+    setImageNumber(null);
 
     if (stopShuffleSoundRef.current) {
       stopShuffleSoundRef.current();
@@ -141,16 +144,18 @@ export default function App() {
 
     revealTimerRef.current = setTimeout(() => {
       let random = null;
+      let randomNumber = null;
 
       if (mode === "hard") {
-        const randomNumber = Math.floor(Math.random() * 25) + 1;
+        randomNumber = Math.floor(Math.random() * 25) + 1;
         random = `/h${randomNumber}.png`;
       } else {
-        const randomNumber = Math.floor(Math.random() * 20) + 1;
+        randomNumber = Math.floor(Math.random() * 20) + 1;
         random = easyImageModules[`./assets/e${randomNumber}.png`] ?? null;
       }
 
       setImage(random);
+      setImageNumber(randomNumber);
       setLoading(false);
       if (stopShuffleSoundRef.current) {
         stopShuffleSoundRef.current();
@@ -202,22 +207,49 @@ export default function App() {
             {loading ? (
               <motion.div
                 key="loading"
-                animate={{ rotate: 360, scale: [1, 1.08, 1] }}
-                transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
-                className="loading"
+                className="shuffle-loader"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
               >
-                Shuffling...
+                <div className="shuffle-track" aria-hidden="true">
+                  {[0, 1, 2, 3, 4].map((item) => (
+                    <motion.span
+                      key={`shuffle-card-${item}`}
+                      className="shuffle-card"
+                      animate={{
+                        y: ["115%", "0%", "-115%"],
+                        opacity: [0, 1, 0],
+                        scale: [0.86, 1, 0.86]
+                      }}
+                      transition={{
+                        duration: 1.25,
+                        repeat: Infinity,
+                        ease: [0.33, 1, 0.68, 1],
+                        delay: item * 0.16
+                      }}
+                    >
+                      {mode === "hard" ? "H" : "E"}
+                    </motion.span>
+                  ))}
+                </div>
+                <p>Shuffling images...</p>
               </motion.div>
             ) : image ? (
-              <motion.img
+              <motion.div
                 key={image}
+                className="image-frame"
                 initial={{ opacity: 0, scale: 0.78, filter: "blur(12px)" }}
                 animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                 exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
                 transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-                src={image}
-                alt="challenge image"
-              />
+              >
+                <img src={image} alt="challenge image" />
+                {imageNumber !== null ? (
+                  <span className="image-number">#{imageNumber}</span>
+                ) : null}
+              </motion.div>
             ) : (
               <motion.p
                 key="placeholder"
