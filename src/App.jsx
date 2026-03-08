@@ -173,7 +173,7 @@ export default function App() {
             <h1>Prompt Craft Challenge</h1>
           </div>
           <p className="subtitle">
-            Get a random image and build your best Firebase-ready idea.
+            THE ART OF TALKING TO AI.
           </p>
         </header>
 
