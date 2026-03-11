@@ -14,104 +14,12 @@ export default function App() {
   const [image, setImage] = useState(null);
   const [imageNumber, setImageNumber] = useState(null);
   const [loading, setLoading] = useState(false);
-  const stopShuffleSoundRef = useRef(null);
   const revealTimerRef = useRef(null);
-
-  const startShuffleSound = () => {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) {
-      return () => {};
-    }
-
-    const audioContext = new AudioContextClass();
-    const masterGain = audioContext.createGain();
-    masterGain.gain.setValueAtTime(1, audioContext.currentTime);
-    masterGain.connect(audioContext.destination);
-
-    let beatTimer = null;
-    let isStopping = false;
-    const startedAt = performance.now();
-    const totalDurationMs = 7000;
-
-    const playBeat = (frequency = 70, attack = 0.01, decay = 0.16, gainLevel = 0.18) => {
-      if (isStopping) {
-        return;
-      }
-
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(frequency, audioContext.currentTime);
-      gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
-      gain.gain.exponentialRampToValueAtTime(gainLevel, audioContext.currentTime + attack);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + decay);
-
-      osc.connect(gain);
-      gain.connect(masterGain);
-
-      osc.start();
-      osc.stop(audioContext.currentTime + decay + 0.02);
-    };
-
-    const playHeartbeat = () => {
-      if (isStopping) {
-        return;
-      }
-
-      const elapsed = performance.now() - startedAt;
-      const tension = Math.min(elapsed / totalDurationMs, 1);
-
-      const firstFreq = 62 + tension * 28;
-      const secondFreq = 70 + tension * 36;
-      const firstGain = 0.14 + tension * 0.2;
-      const secondGain = 0.12 + tension * 0.18;
-      const firstDecay = 0.18 - tension * 0.05;
-      const secondDecay = 0.14 - tension * 0.04;
-      const lubDubGap = 170 - tension * 45;
-      const cycleGap = 920 - tension * 360;
-
-      // Lub-dub pattern with increasing intensity and tempo.
-      playBeat(firstFreq, 0.009, firstDecay, firstGain);
-      setTimeout(
-        () => playBeat(secondFreq, 0.007, secondDecay, secondGain),
-        lubDubGap
-      );
-
-      beatTimer = setTimeout(playHeartbeat, cycleGap);
-    };
-
-    playHeartbeat();
-
-    return () => {
-      if (isStopping) {
-        return;
-      }
-      isStopping = true;
-
-      if (beatTimer) {
-        clearTimeout(beatTimer);
-        beatTimer = null;
-      }
-
-      const now = audioContext.currentTime;
-      masterGain.gain.cancelScheduledValues(now);
-      masterGain.gain.setValueAtTime(masterGain.gain.value, now);
-      masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
-
-      setTimeout(() => {
-        audioContext.close();
-      }, 320);
-    };
-  };
 
   useEffect(() => {
     return () => {
       if (revealTimerRef.current) {
         clearTimeout(revealTimerRef.current);
-      }
-      if (stopShuffleSoundRef.current) {
-        stopShuffleSoundRef.current();
       }
     };
   }, []);
@@ -126,21 +34,11 @@ export default function App() {
       clearTimeout(revealTimerRef.current);
       revealTimerRef.current = null;
     }
-
-    if (stopShuffleSoundRef.current) {
-      stopShuffleSoundRef.current();
-      stopShuffleSoundRef.current = null;
-    }
   };
 
   const startGame = () => {
     setLoading(true);
     setImageNumber(null);
-
-    if (stopShuffleSoundRef.current) {
-      stopShuffleSoundRef.current();
-    }
-    stopShuffleSoundRef.current = startShuffleSound();
 
     revealTimerRef.current = setTimeout(() => {
       let random = null;
@@ -157,10 +55,6 @@ export default function App() {
       setImage(random);
       setImageNumber(randomNumber);
       setLoading(false);
-      if (stopShuffleSoundRef.current) {
-        stopShuffleSoundRef.current();
-        stopShuffleSoundRef.current = null;
-      }
       revealTimerRef.current = null;
     }, 7000);
   };
